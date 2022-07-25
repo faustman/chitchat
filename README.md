@@ -19,6 +19,19 @@ Having a successful experience with a few chat projects using WebSockets (even L
 
 Seems that **WebSocket** is the most reliable and stable protocol and for chat purposes fits better than everything else.
 
+### TODO + ideas
+
+Chat ideas:
+
+- Using NATS JetStream for pub/sub and persisting comments
+- Auth via JWT by auth service (jwt contains user, channel)
+- service for web socket connection and publish message
+  - Publish message could be done by WS msg
+  - We do need api for getting all messages (?)
+  - Think about how to deal with connection lags ? (Internet connection)
+- By WS connection state we could maintain a Users statuses
+  - We do need api for getting all users before connection
+
 ## About The Project
 
 ### Built With
