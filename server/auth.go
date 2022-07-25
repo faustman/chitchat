@@ -20,6 +20,7 @@ type Auth struct {
 
 type authHandler struct {
 	SigningKey []byte
+	// Require midddleware parse and validate jwt token.
 	Require echo.MiddlewareFunc
 }
 
@@ -46,6 +47,7 @@ func NewAuthHandler(jwtSecret string) *authHandler {
 	}
 }
 
+// Create /auth returns token for specific user.
 func (a authHandler) Create(c echo.Context) error {
 	name := c.FormValue("name")
 	email := c.FormValue("email")
@@ -65,7 +67,7 @@ func (a authHandler) Create(c echo.Context) error {
 		_, err := mail.ParseAddress(email)
 
 		if err != nil {
-			return echo.NewHTTPError(http.StatusUnprocessableEntity, "Email invalid")
+			return echo.NewHTTPError(http.StatusUnprocessableEntity, "Email is not invalid")
 		}
 	}
 
@@ -86,11 +88,12 @@ func (a authHandler) Create(c echo.Context) error {
 		return err
 	}
 
-	return c.JSON(http.StatusOK, echo.Map{
+	return c.JSON(http.StatusCreated, echo.Map{
 		"token": t,
 	})
 }
 
+// Get /auth will return valid auth object.
 func (a authHandler) Get(c echo.Context) error {
 	token := c.Get("token").(*jwt.Token)
 	auth := token.Claims.(*Auth)
