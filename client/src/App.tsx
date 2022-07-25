@@ -5,6 +5,7 @@ import { Header } from "./components/Header/Header";
 import { Auth } from "./components/Auth/Auth";
 import { Progress } from "./components/Progress/Progress";
 import { AuthService, AuthType } from "./components/Auth/service";
+import { Chat } from "./components/Chat/Chat";
 
 export const App = () => {
   const [auth, setAuth] = React.useState<AuthType | null>(null);
@@ -30,7 +31,7 @@ export const App = () => {
       ) : !auth ? (
         <Auth setAuth={setAuth} />
       ) : (
-        <Text>Logged in!!</Text>
+        <Chat />
       )}
     </ChakraProvider>
   );
