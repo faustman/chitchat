@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
 
@@ -28,6 +29,9 @@ func main() {
 			"message": "Welcome to ChitChat!",
 		})
 	})
+
+	fmt.Println("Connecting to NATS..")
+	Connect()
 
 	e.Logger.Fatal(e.Start(":4000"))
 }

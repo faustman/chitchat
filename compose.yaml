@@ -6,8 +6,6 @@ services:
       - "9090:9090"
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
-    environment:
-      - JWT_SECRET=${JWT_SECRET}
   client:
     build: ./client
     ports:
@@ -25,3 +23,12 @@ services:
       - ./server:/go/src/server
     deploy:
       replicas: 1
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
+      - NATS_URL=nats://nats:4222
+  nats:
+   image: nats:latest
+   command: -js -m 8222
+   ports:
+     - 4222:4222
+     - 8222:8222
