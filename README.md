@@ -15,6 +15,7 @@ Having a successful experience with a few chat projects using WebSockets (even L
 - gRPC-Web - it's a promising solution since gRPC has bidirectional streams, but my investigation leads me to the fact that it's too raw to use it in production. See [gRPC-Web Streaming Roadmap](https://github.com/grpc/grpc-web/blob/master/doc/streaming-roadmap.md)
 - WebRTC (p2p) - kind a also interesting to use, but requires some orchestration. But potentialy could save some infrastructure.
 - [WebTransport](https://w3c.github.io/webtransport/) - most modern API that will sits on top of HTTP/3 and potentialy could replace WebSockets in the future. In draft
+- Socket.IO or Cetrifugo - looks nice, especialy for prototyping. Mostly brain free solutions, setup and forget. Not fit for project purpose.
 
 Seems that **WebSocket** is the most reliable and stable protocol and for chat purposes fits better than everything else.
 
