@@ -2,9 +2,8 @@ package main
 
 import (
 	"net/http"
-	"time"
+	"os"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 )
@@ -18,56 +17,11 @@ func main() {
 	// Recover middleware recovers from panics anywhere in the chain.
 	e.Use(middleware.Recover())
 
-	e.POST("/auth", func(c echo.Context) error {
-		name := c.FormValue("name")
-		email := c.FormValue("email")
+	authHandler := *NewAuthHandler(os.Getenv("JWT_SECRET"))
 
-		channel := c.FormValue("channel")
+	e.POST("/auth", authHandler.Create)
 
-		claims := &Auth{
-			User{name, email},
-			channel,
-			jwt.StandardClaims{
-					Issuer: "chitchat",
-					ExpiresAt: time.Now().Add(time.Hour * 72).Unix(),
-			},
-		}
-
-		// For production purpose better to use RS256 Signing Method instead
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-		t, err := token.SignedString([]byte("secret"))
-		if err != err {
-			return err
-		}
-
-		return c.JSON(http.StatusOK, echo.Map{
-			"token": t,
-		})
-	})
-
-	config := middleware.JWTConfig{
-		Claims: &Auth{},
-		SigningKey: []byte("secret"),
-		ContextKey: "token",
-		TokenLookup: "query:token",
-		ErrorHandler: func(err error) error {
-			// Masking all jwt errors from the clients
-			return &echo.HTTPError{
-				Code:     http.StatusUnauthorized,
-				Message:  "Unauthorized",
-			}
-		},
-	}
-
-	requireAuth := middleware.JWTWithConfig(config)
-
-	e.GET("/auth", func(c echo.Context) error {
-		token := c.Get("token").(*jwt.Token)
-		auth := token.Claims.(*Auth)
-
-		return c.JSON(http.StatusOK, auth)
-	}, requireAuth)
+	e.GET("/auth", authHandler.Get, authHandler.Require)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, echo.Map{

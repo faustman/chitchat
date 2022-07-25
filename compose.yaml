@@ -6,11 +6,17 @@ services:
       - "9090:9090"
     volumes:
       - ./envoy.yaml:/etc/envoy/envoy.yaml
+    environment:
+      - JWT_SECRET=${JWT_SECRET}
   client:
     build: ./client
+    ports:
+      - "3000:3000"
     volumes:
       - ./client:/app
       - /app/node_modules
+    environment:
+      - REACT_APP_SERVER_URL=${REACT_APP_SERVER_URL}
     # stdin_open: true
     # tty: true
   server:

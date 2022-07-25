@@ -1,38 +1,37 @@
 import * as React from "react"
-import {
-  ChakraProvider,
-  Box,
-  Text,
-  Link,
-  VStack,
-  Code,
-  Grid,
-  theme,
-} from "@chakra-ui/react"
-import { ColorModeSwitcher } from "./ColorModeSwitcher"
-import { Logo } from "./Logo"
+import { ChakraProvider, theme, Text } from "@chakra-ui/react";
 
-export const App = () => (
-  <ChakraProvider theme={theme}>
-    <Box textAlign="center" fontSize="xl">
-      <Grid minH="100vh" p={3}>
-        <ColorModeSwitcher justifySelf="flex-end" />
-        <VStack spacing={8}>
-          <Logo h="40vmin" pointerEvents="none" />
-          <Text>
-            HI
-          </Text>
-          <Link
-            color="teal.500"
-            href="https://chakra-ui.com"
-            fontSize="2xl"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Learn Chakra
-          </Link>
-        </VStack>
-      </Grid>
-    </Box>
-  </ChakraProvider>
-)
+import { Header } from "./components/Header/Header";
+import { Auth } from "./components/Auth/Auth";
+import { Progress } from "./components/Progress/Progress";
+import { AuthService, AuthType } from "./components/Auth/service";
+
+export const App = () => {
+  const [auth, setAuth] = React.useState<AuthType | null>(null);
+  const [progress, setProgress] = React.useState<string | null>("Iinitialze..");
+
+  // Check Auth first
+  React.useEffect(() => {
+    AuthService.auth()
+      .then(setAuth)
+      .then(() => setProgress(null));
+  }, []);
+
+  const logout = () => {
+    AuthService.reset();
+    setAuth(null);
+  };
+
+  return (
+    <ChakraProvider theme={theme}>
+      <Header auth={auth} logout={logout} />
+      {progress ? (
+        <Progress text={progress} />
+      ) : !auth ? (
+        <Auth setAuth={setAuth} />
+      ) : (
+        <Text>Logged in!!</Text>
+      )}
+    </ChakraProvider>
+  );
+};
