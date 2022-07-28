@@ -37,6 +37,10 @@ static_resources:
                   - upgrade_type: websocket
                   cluster: chitchat-server
               - match:
+                  prefix: "/messages"
+                route:
+                  cluster: chitchat-server
+              - match:
                   prefix: "/"
                 route:
                   cluster: chitchat-client

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
 
 	"github.com/gorilla/websocket"
 	"github.com/nats-io/nats.go"
@@ -63,24 +65,35 @@ func (c Consumer) Unregister() {
 
 // TODO: maybe better to name Listen ?
 func (c Consumer) Listen() {
-	fmt.Println("Listen")
+	var subscription *nats.Subscription
+
+	defer func() {
+		c.Unregister()
+		subscription.Unsubscribe()
+	}()
 
 	msgSubject := fmt.Sprintf("CHITCHAT.%s.message", c.Channel)
 
-	c.stream.Subscribe(msgSubject,  func(msg *nats.Msg) {
+	// Without nats.DeliverNew() the subscriber will get all messages in the stream
+	// It allows us for free fill chat history in UI, but I found that it hard to manage it
+	// if it'll passible to pass last message time to WS reconnect state,
+	// then we'll send to clinet only missed messages.
+	subscription, _ = c.stream.Subscribe(msgSubject,  func(msg *nats.Msg) {
 		c.ws.WriteMessage(websocket.TextMessage, msg.Data)
-	})
+	}, nats.DeliverNew())
 
 	for {
-		fmt.Println("Read")
-		// Read
+		// Read msg
 		_, msg, err := c.ws.ReadMessage()
 		if err != nil {
-			// TODO: unregister
 			break
 		}
 
-		c.stream.Publish(msgSubject, msg)
+		channelMsg := NewChannelMessage(c.User, time.Now(), string(msg))
+
+		data, _ := json.Marshal(channelMsg)
+
+		c.stream.Publish(msgSubject, data)
 	}
 
 	// TODO: for user precense

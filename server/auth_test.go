@@ -61,7 +61,6 @@ func TestCreateAuth(t *testing.T) {
 			if claims, ok := token.Claims.(*Auth); ok && token.Valid {
 
 				assert.Equal(t, claims.User.Name, userName)
-				assert.Equal(t, claims.User.Email, userEmail)
 				assert.Equal(t, claims.Channel, channel)
 
 				assert.Contains(t, claims.User.Avatar, "https://www.gravatar.com/avatar/")
@@ -230,7 +229,6 @@ func TestGetAuth(t *testing.T) {
 		json.Unmarshal(resGet.Body.Bytes(), authResponse)
 
 		assert.Equal(t, authResponse.User.Name, userName)
-		assert.Equal(t, authResponse.User.Email, userEmail)
 		assert.Equal(t, authResponse.Channel, channel)
 
 		assert.Contains(t, authResponse.User.Avatar, "https://www.gravatar.com/avatar/")

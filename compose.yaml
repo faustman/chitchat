@@ -15,7 +15,7 @@ services:
       - "3000:3000"
     volumes:
       - ./client:/app
-      - /app/node_modules
+      - ./client/node_modules:/app/node_modules
     environment:
       - REACT_APP_SERVER_URL=${REACT_APP_SERVER_URL}
     # stdin_open: true
@@ -37,3 +37,11 @@ services:
    ports:
      - 4222:4222
      - 8222:8222
+  test_nats:
+   build: ./test_nats
+   ports:
+     - 8091:8091
+   environment:
+    - NATS_URL=nats://nats:4222
+   depends_on:
+    - nats

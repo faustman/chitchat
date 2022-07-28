@@ -41,7 +41,7 @@ export function Auth(props: AuthProps) {
     AuthService.login({
       name: nameRef.current?.value || "",
       email: emailRef.current?.value,
-      channel: channelRef.current?.value || "",
+      channel: channelRef.current?.value || "lobby",
     })
       .then(props.setAuth)
       .catch((error) => {
@@ -93,20 +93,20 @@ export function Auth(props: AuthProps) {
                 <InputLeftAddon children="#" />
                 <Input
                   type="channel"
-                  placeholder="general"
-                  defaultValue={"general"}
+                  placeholder="lobby"
+                  defaultValue={"lobby"}
                   ref={channelRef}
                 />
               </InputGroup>
               <FormHelperText>
-                You could create own channel, #general is default
+                You could create own channel, #lobby is default
               </FormHelperText>
             </FormControl>
             <Stack spacing={10} pt={2}>
               <Button
                 type="submit"
                 isLoading={isLoading}
-                loadingText="Submitting.."
+                loadingText="Joining.."
                 size="lg"
                 bg={"blue.400"}
                 color={"white"}
@@ -114,7 +114,7 @@ export function Auth(props: AuthProps) {
                   bg: "blue.500",
                 }}
               >
-                Login
+                Join
               </Button>
               {error ? <Text color="red">Error: {error.message}</Text> : null}
             </Stack>

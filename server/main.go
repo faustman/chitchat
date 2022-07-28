@@ -26,7 +26,7 @@ func main() {
 
 	fmt.Println("Connecting to NATS..")
 
-	nc, err := Connect()
+	stream, err := NewStream()
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
@@ -34,8 +34,9 @@ func main() {
 	consumersHub := NewConsumersHub()
 	go consumersHub.run()
 
-	channelHandler := NewChannelHandler(nc, consumersHub)
+	channelHandler := NewChannelHandler(stream, consumersHub)
 	e.GET("/channel", channelHandler.Listen, authHandler.Require)
+	e.GET("/messages", channelHandler.GetMessages, authHandler.Require)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, echo.Map{
