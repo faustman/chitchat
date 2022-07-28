@@ -4,27 +4,56 @@ import { ChakraProvider, theme } from "@chakra-ui/react";
 import { Header } from "./components/Header/Header";
 import { Auth } from "./components/Auth/Auth";
 import { Progress } from "./components/Progress/Progress";
-import { AuthService, AuthType } from "./components/Auth/service";
-import { Chat } from "./components/Chat/Chat";
+import { AuthService, AuthType, UserType } from "./components/Auth/service";
+import { Chat, ChannelMessage } from "./components/Chat/Chat";
+import { ChatService } from "./components/Chat/service";
 
 export const App = () => {
   const [auth, setAuth] = React.useState<AuthType | null>(null);
   const [progress, setProgress] = React.useState<string | null>("Initialze..");
-  const [initMessages, setInitMessages] = React.useState([]);
+  const [initMessages, setInitMessages] = React.useState<Array<ChannelMessage>>(
+    []
+  );
+  const [initUsers, setInitUsers] = React.useState<Array<UserType>>([]);
+
+  const checkAuth = () => {
+    AuthService.auth().then((auth) => {
+      setAuth(auth);
+      if (!auth) {
+        // Show login page
+        setProgress(null);
+      }
+    });
+  };
 
   // Check Auth first
   React.useEffect(() => {
-    AuthService.auth().then(setAuth);
+    // Listen for login/logout from other windows
+    window.addEventListener(
+      "storage",
+      (event) => {
+        checkAuth();
+      },
+      { once: true }
+    );
+
+    checkAuth();
   }, []);
 
-  // Load MSGs
+  // Load MSGs and Users
   React.useEffect(() => {
     if (auth) {
       setProgress("Loading messages..");
 
-      fetch("/messages?token=" + AuthService.token)
-        .then((r) => r.json())
-        .then((data) => setInitMessages(data.messages || []))
+      // small feedback of process..
+      setTimeout(() => {
+        setProgress((prev) => (prev ? "Loading users.." : null));
+      }, 500);
+
+      Promise.all([
+        ChatService.fetchMessages().then(setInitMessages),
+        ChatService.fetchUsers().then(setInitUsers),
+      ])
         .then(() => setProgress(null))
         .catch(console.error);
     }
@@ -43,8 +72,8 @@ export const App = () => {
       ) : !auth ? (
         <Auth setAuth={setAuth} />
       ) : (
-        <Chat initMsg={initMessages} />
+        <Chat initUsers={initUsers} initMsg={initMessages} auth={auth} />
       )}
     </ChakraProvider>
   );
-};
+};;;;;;;;;;;;;

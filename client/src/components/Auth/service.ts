@@ -1,21 +1,20 @@
 const AUTH_PATH = "/auth";
 
 type LoginProps = {
-  name: string,
-  email?: string,
-  channel: string,
+  name: string;
+  email?: string;
+  channel: string;
 }
 
 export type UserType = {
-  name: string
-  avatar: string
-  email: string
-
+  id: string;
+  name: string;
+  avatar: string;
 }
 
 export type AuthType = {
-  user: UserType
-  channel: string
+  user: UserType;
+  channel: string;
 }
 
 export class AuthService {

@@ -1,16 +1,18 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
+	"github.com/labstack/gommon/log"
 )
 
 func main() {
 	e := echo.New()
+
+	e.Logger.SetLevel(log.INFO)
 
 	// Logger middleware logs the information about each HTTP request.
 	e.Use(middleware.Logger())
@@ -24,19 +26,21 @@ func main() {
 
 	e.GET("/auth", authHandler.Get, authHandler.Require)
 
-	fmt.Println("Connecting to NATS..")
+	e.Logger.Info("Connecting to NATS..")
 
 	stream, err := NewStream()
 	if err != nil {
 		e.Logger.Fatal(err)
 	}
 
+	// Run consumer hub
 	consumersHub := NewConsumersHub()
 	go consumersHub.run()
 
 	channelHandler := NewChannelHandler(stream, consumersHub)
 	e.GET("/channel", channelHandler.Listen, authHandler.Require)
 	e.GET("/messages", channelHandler.GetMessages, authHandler.Require)
+	e.GET("/users", channelHandler.GetUsers, authHandler.Require)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.JSON(http.StatusOK, echo.Map{

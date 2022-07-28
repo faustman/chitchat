@@ -75,11 +75,11 @@ export function Auth(props: AuthProps) {
           <Stack spacing={4} as="form" onSubmit={handleSubmit}>
             <FormControl id="name" w={"sm"} isRequired>
               <FormLabel>Name</FormLabel>
-              <Input type="text" ref={nameRef} />
+              <Input type="text" name="name" ref={nameRef} />
             </FormControl>
             <FormControl id="email" size={"lg"}>
               <FormLabel>Email address</FormLabel>
-              <Input type="email" ref={emailRef} />
+              <Input type="email" name="email" ref={emailRef} />
               <FormHelperText>
                 Optional. We only use it for getting your avatar via{" "}
                 <Link href="https://gravatar.com" target={"_blank"}>

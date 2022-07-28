@@ -41,6 +41,10 @@ static_resources:
                 route:
                   cluster: chitchat-server
               - match:
+                  prefix: "/users"
+                route:
+                  cluster: chitchat-server
+              - match:
                   prefix: "/"
                 route:
                   cluster: chitchat-client

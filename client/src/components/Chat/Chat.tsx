@@ -9,15 +9,19 @@ import {
   VStack,
   Text,
   Avatar,
-  Alert,
-  AlertIcon,
   useToast,
   UseToastOptions,
+  Heading,
+  StackDivider,
+  Icon,
+  AvatarBadge,
+  Badge,
 } from "@chakra-ui/react";
 import { useState, useEffect, useCallback, useRef } from "react";
+import { HiUsers } from "react-icons/hi";
 
 import useWebSocket, { ReadyState } from "react-use-websocket";
-import { AuthService } from "../Auth/service";
+import { AuthService, AuthType, UserType } from "../Auth/service";
 
 export const SendIcon = createIcon({
   displayName: "SendIcon",
@@ -28,8 +32,9 @@ export const SendIcon = createIcon({
   ),
 });
 
-type ChannelMessage = {
-  from_user: { name: string; avatar: string };
+export type ChannelMessage = {
+  type: string;
+  from_user: UserType;
   text: string;
   sent_at: number;
 };
@@ -44,12 +49,21 @@ const connectionStatus = {
 
 type ChatProps = {
   initMsg?: Array<ChannelMessage>;
+  initUsers?: Array<UserType>;
+  auth: AuthType;
 };
 
 export const Chat = (props: ChatProps) => {
   const [messageHistory, setMessageHistory] = useState<Array<ChannelMessage>>(
     props.initMsg || []
   );
+
+  const initUsers = (props.initUsers || [])
+    .concat(props.auth.user) // Current user always online
+    .reduce((users, user) => ({ ...users, [user.id]: user }), {});
+  const [usersOnline, setUsersOnline] = useState<{
+    [key: string]: UserType;
+  }>(initUsers);
 
   const messageTextRef = useRef<HTMLInputElement>(null);
   const bottomAnchorRef = useRef<HTMLInputElement>(null);
@@ -62,6 +76,8 @@ export const Chat = (props: ChatProps) => {
       },
       shouldReconnect: (closeEvent) => {
         // TODO: impl proper logic
+        console.log(closeEvent);
+
         return true;
       },
     }
@@ -72,7 +88,22 @@ export const Chat = (props: ChatProps) => {
     if (lastJsonMessage !== null) {
       const msg = lastJsonMessage as ChannelMessage;
 
-      setMessageHistory((prev) => prev.concat(msg));
+      if (msg.type === "message") {
+        setMessageHistory((prev) => prev.concat(msg));
+      }
+
+      if (msg.type === "join") {
+        const user = msg.from_user;
+        setUsersOnline((prev) => ({ ...prev, [user.id]: user }));
+      }
+
+      if (msg.type === "leave") {
+        setUsersOnline((prev) => {
+          delete prev[msg.from_user.id];
+
+          return prev;
+        });
+      }
     }
   }, [lastJsonMessage, setMessageHistory]);
 
@@ -170,7 +201,7 @@ export const Chat = (props: ChatProps) => {
                     src={message.from_user.avatar}
                   />
                 </Box>
-                <VStack>
+                <VStack align={"flex-start"}>
                   <Box w={"100%"}>
                     <Text fontSize="xs">{message.from_user.name}</Text>
                   </Box>
@@ -213,10 +244,33 @@ export const Chat = (props: ChatProps) => {
         m={2}
         rounded={"lg"}
       >
-        <Alert status="error" rounded={"lg"}>
-          <AlertIcon />
-          There was an error processing your request
-        </Alert>
+        <VStack
+          divider={
+            <StackDivider
+              borderColor={useColorModeValue("gray.50", "gray.800")}
+            />
+          }
+          spacing={2}
+          align="stretch"
+        >
+          <HStack justifyContent={"center"} textAlign={"center"} mt={"8px"}>
+            <Icon as={HiUsers} w={6} h={6} />
+            <Heading size={"md"}>Online</Heading>
+          </HStack>
+          <VStack align={"left"} ml={"8px"}>
+            {Object.entries(usersOnline).map(([key, user]) => (
+              <HStack key={key}>
+                <Avatar size="sm" name={user.name} src={user.avatar}>
+                  <AvatarBadge boxSize="1.25em" bg="green.500" />
+                </Avatar>
+                <Text>{user.name}</Text>
+                {user.name === props.auth.user.name ? (
+                  <Text as="i">(you)</Text>
+                ) : null}
+              </HStack>
+            ))}
+          </VStack>
+        </VStack>
       </Box>
     </Flex>
   );

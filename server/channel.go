@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"time"
@@ -22,7 +21,7 @@ type ChannelMessage struct {
 	Type string `json:"type"`
 	FromUser *User `json:"from_user"`
 	SentAt time.Time `json:"sent_at"`
-	Text string `json:"text"`
+	Text string `json:"text,omitempty"`
 }
 
 func NewChannelMessage(user *User, sentAt time.Time, text string) ChannelMessage {
@@ -31,6 +30,22 @@ func NewChannelMessage(user *User, sentAt time.Time, text string) ChannelMessage
 		FromUser: user,
 		SentAt: sentAt,
 		Text: text,
+	}
+}
+
+func NewChannelJoinMessage(user *User, sentAt time.Time) ChannelMessage {
+	return ChannelMessage{
+		Type: "join",
+		FromUser: user,
+		SentAt: sentAt,
+	}
+}
+
+func NewChannelLeaveMessage(user *User, sentAt time.Time) ChannelMessage {
+	return ChannelMessage{
+		Type: "leave",
+		FromUser: user,
+		SentAt: sentAt,
 	}
 }
 
@@ -68,6 +83,7 @@ func (h channelHandler) Listen(c echo.Context) error {
 		ws: ws,
 		hub: h.hub,
 		stream: h.stream,
+		Logger: c.Logger(),
 	}
 
 	consumer.Register()
@@ -81,9 +97,7 @@ func (h channelHandler) GetMessages(c echo.Context) error {
 	token := c.Get("token").(*jwt.Token)
 	auth := token.Claims.(*Auth)
 
-	msgSubject := fmt.Sprintf("CHITCHAT.%s.message", auth.Channel)
-
-	opts := []nats.SubOpt{}
+	opts := []nats.SubOpt{nats.OrderedConsumer()}
 
 	st := c.QueryParam("start_time")
 
@@ -91,20 +105,20 @@ func (h channelHandler) GetMessages(c echo.Context) error {
 	if len(st) > 0 {
 		unix, err := strconv.ParseInt(st, 10, 64)
 		if err != nil {
-			return nil
+			return err
 		}
 
 		opts = append(opts, nats.StartTime(time.Unix(unix, 0)))
 	}
 
-	sub, err := h.stream.SubscribeSync(msgSubject, opts...)
+	sub, err := h.stream.SubscribeSync(MessageSubject(auth.Channel), opts...)
 	if err != nil {
 		return err
 	}
 
-	info, err := h.stream.StreamInfo("CHITCHAT")
+	info, err := h.stream.StreamInfo(StreamName)
 	if err != nil {
-		return nil
+		return err
 	}
 	// We need to know how much to iterate until the end
 	lastSeq := info.State.LastSeq
@@ -119,7 +133,7 @@ func (h channelHandler) GetMessages(c echo.Context) error {
 			msg := ChannelMessage{}
 
 			if err := json.Unmarshal(m.Data, &msg); err != nil {
-				return nil
+				return err
 			}
 
 			messages = append(messages, msg)
@@ -132,5 +146,41 @@ func (h channelHandler) GetMessages(c echo.Context) error {
 
 	return c.JSON(http.StatusCreated, echo.Map{
 		"messages": messages,
+	})
+}
+
+// GetUsers from channel presence store
+func (h channelHandler) GetUsers(c echo.Context) error {
+	token := c.Get("token").(*jwt.Token)
+	auth := token.Claims.(*Auth)
+
+	kv, err := h.stream.CreateKeyValue(&nats.KeyValueConfig{
+		Bucket: auth.Channel + "-presence",
+	})
+	if err != nil {
+		return err
+	}
+
+	var users []User
+
+	uids, _ := kv.Keys();
+
+	for _, uid := range uids {
+		entry, err := kv.Get(uid)
+		if err != nil {
+			return err
+		}
+
+		user := User{}
+		if err := json.Unmarshal(entry.Value(), &user); err != nil {
+			return err
+		}
+
+
+		users = append(users, user)
+	}
+
+	return c.JSON(http.StatusCreated, echo.Map{
+		"users": users,
 	})
 }
