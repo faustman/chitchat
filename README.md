@@ -34,15 +34,48 @@ Chat ideas:
 
 ## About The Project
 
+The project build on a NATS's built-in distributed persistence system called JetStream.
+The idea behind that is that stream could be used for distribution and for persisting messaging. Which makes the system pretty lightweight and reliable.
+
+After the implementation, I think that JetStream isn't the best choice for that, the fact that it is still in beta limits the functionalities and reflects on usability.
+
+A more strict forward solution could just be using Redis PubSun for distribution messages and Redis KeyValue for persisting messages and users.
+
 ### Built With
+
+- Core
+  - NATS JetStream - for streaming/persisting messages, track user presence, etc.
+  - Envoy - as edge proxy for WS and HTTP, load balancing server
+  - Docker Compose - for orchestration
+- Server
+  - Echo - High performance, extensible, minimalist Go web framework.
+  - gorilla/websocket - A fast, well-tested and widely used WebSocket implementation for Go.
+  - golang-jwt/jwt - For JWT Auth flow.
+- Client
+  - create-react-app + typescript - scaffolding React app
+  - react-use-websocket - React Hook for WebSocket communication
+  - ChakraUI - for building UI
 
 ## Getting Started
 
+## Installation
+
+Just make sure that you have Docker Compose in place.
+
 ### Prerequisites
 
-### Installation
+- Docker Compose
 
 ## Usage
+
+```sh
+git clone git@github.com:faustman/chitchat.git
+cd chitchat
+
+docker compose up
+```
+
+then open `http://localhost:8080/` in browser.
 
 ## Contact
 
