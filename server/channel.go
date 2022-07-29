@@ -12,7 +12,12 @@ import (
 )
 
 var (
-	upgrader = websocket.Upgrader{}
+	upgrader = websocket.Upgrader{
+		ReadBufferSize:  1024,
+		WriteBufferSize: 1024,
+		// For dev purpose only: if u want to skip origin checking
+		// CheckOrigin: func(r *http.Request) bool { return true },
+	}
 )
 
 // ChannelMessage unsing for communication in channel.
@@ -83,15 +88,7 @@ func (h channelHandler) Listen(c echo.Context) error {
 		return err
 	}
 
-	consumer := &Consumer{
-		Channel: auth.Channel,
-		User: auth.User,
-		ws: ws,
-		hub: h.hub,
-		stream: h.stream,
-		presence: presence,
-		Logger: c.Logger(),
-	}
+	consumer := NewConsumer(auth.Channel, auth.User, ws, h.hub, h.stream, presence, c.Logger())
 
 	consumer.Register()
 

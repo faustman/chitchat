@@ -69,7 +69,7 @@ export const Chat = (props: ChatProps) => {
   const bottomAnchorRef = useRef<HTMLInputElement>(null);
 
   const { sendMessage, lastJsonMessage, readyState } = useWebSocket(
-    "ws://localhost:8080/channel",
+    process.env.REACT_APP_SERVER_URL?.replace("http", "ws") + "/channel",
     {
       queryParams: {
         token: AuthService.token || "",
