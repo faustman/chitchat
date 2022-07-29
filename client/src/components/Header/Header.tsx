@@ -53,7 +53,7 @@ const UserMenu = (props: UserMenuProps) => (
       <br />
       <MenuDivider />
       <MenuItem as="button" onClick={props.logout}>
-        Logout
+        Leave
       </MenuItem>
     </MenuList>
   </Menu>

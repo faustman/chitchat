@@ -54,6 +54,13 @@ func GetConsumersDescription(js nats.JetStreamContext) []string {
 	return cd
 }
 
+// GetPresenceBucket create if not exists and return KeyValue presence bucket.
+func GetPresenceBucket(js nats.JetStreamContext, channel string) (nats.KeyValue, error) {
+	return js.CreateKeyValue(&nats.KeyValueConfig{
+		Bucket: channel + "-presence",
+	})
+}
+
 // Generate subject based on channel and message
 func subject(c, m string) string {
 	return fmt.Sprintf("%s.%s.%s", StreamName, c, m)

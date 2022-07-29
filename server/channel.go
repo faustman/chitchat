@@ -6,7 +6,6 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/golang-jwt/jwt"
 	"github.com/gorilla/websocket"
 	"github.com/labstack/echo/v4"
 	"github.com/nats-io/nats.go"
@@ -16,7 +15,7 @@ var (
 	upgrader = websocket.Upgrader{}
 )
 
-// ChannelMessage unsing for communication in channel
+// ChannelMessage unsing for communication in channel.
 type ChannelMessage struct {
 	Type string `json:"type"`
 	FromUser *User `json:"from_user"`
@@ -24,6 +23,7 @@ type ChannelMessage struct {
 	Text string `json:"text,omitempty"`
 }
 
+// NewChannelMessage build new text ChannelMessage.
 func NewChannelMessage(user *User, sentAt time.Time, text string) ChannelMessage {
 	return ChannelMessage{
 		Type: "message",
@@ -33,6 +33,7 @@ func NewChannelMessage(user *User, sentAt time.Time, text string) ChannelMessage
 	}
 }
 
+// NewChannelMessage build new join ChannelMessage.
 func NewChannelJoinMessage(user *User, sentAt time.Time) ChannelMessage {
 	return ChannelMessage{
 		Type: "join",
@@ -41,6 +42,7 @@ func NewChannelJoinMessage(user *User, sentAt time.Time) ChannelMessage {
 	}
 }
 
+// NewChannelMessage build new leave ChannelMessage.
 func NewChannelLeaveMessage(user *User, sentAt time.Time) ChannelMessage {
 	return ChannelMessage{
 		Type: "leave",
@@ -49,6 +51,7 @@ func NewChannelLeaveMessage(user *User, sentAt time.Time) ChannelMessage {
 	}
 }
 
+// channelHandler handle channel stuff.
 type channelHandler struct {
 	// NATS JetStream context
 	stream nats.JetStreamContext
@@ -57,6 +60,7 @@ type channelHandler struct {
 	hub *ConsumersHub
 }
 
+// NewChannelHandler build new channelHandler.
 func NewChannelHandler(stream nats.JetStreamContext, hub *ConsumersHub) *channelHandler {
 	return &channelHandler{
 		stream: stream,
@@ -64,18 +68,20 @@ func NewChannelHandler(stream nats.JetStreamContext, hub *ConsumersHub) *channel
 	}
 }
 
-// const pingPeriod = 10 * time.Second
-// const writeWait = 10 * time.Second
-
 // Listen to incoming websocket connection and register new consumer.
 func (h channelHandler) Listen(c echo.Context) error {
+	// Upgrade to ws
 	ws, err := upgrader.Upgrade(c.Response(), c.Request(), nil)
 	if err != nil {
 		return err
 	}
 
-	token := c.Get("token").(*jwt.Token)
-	auth := token.Claims.(*Auth)
+	auth := ExtactAuth(c)
+
+	presence, err := GetPresenceBucket(h.stream, auth.Channel)
+	if err != nil {
+		return err
+	}
 
 	consumer := &Consumer{
 		Channel: auth.Channel,
@@ -83,6 +89,7 @@ func (h channelHandler) Listen(c echo.Context) error {
 		ws: ws,
 		hub: h.hub,
 		stream: h.stream,
+		presence: presence,
 		Logger: c.Logger(),
 	}
 
@@ -93,9 +100,9 @@ func (h channelHandler) Listen(c echo.Context) error {
 	return nil
 }
 
+// GetMessages extract text messages from stream and respond with JSON
 func (h channelHandler) GetMessages(c echo.Context) error {
-	token := c.Get("token").(*jwt.Token)
-	auth := token.Claims.(*Auth)
+	auth := ExtactAuth(c)
 
 	opts := []nats.SubOpt{nats.OrderedConsumer()}
 
@@ -151,22 +158,19 @@ func (h channelHandler) GetMessages(c echo.Context) error {
 
 // GetUsers from channel presence store
 func (h channelHandler) GetUsers(c echo.Context) error {
-	token := c.Get("token").(*jwt.Token)
-	auth := token.Claims.(*Auth)
+	auth := ExtactAuth(c)
 
-	kv, err := h.stream.CreateKeyValue(&nats.KeyValueConfig{
-		Bucket: auth.Channel + "-presence",
-	})
+	presence, err := GetPresenceBucket(h.stream, auth.Channel)
 	if err != nil {
 		return err
 	}
 
 	var users []User
 
-	uids, _ := kv.Keys();
+	uids, _ := presence.Keys();
 
 	for _, uid := range uids {
-		entry, err := kv.Get(uid)
+		entry, err := presence.Get(uid)
 		if err != nil {
 			return err
 		}
@@ -175,7 +179,6 @@ func (h channelHandler) GetUsers(c echo.Context) error {
 		if err := json.Unmarshal(entry.Value(), &user); err != nil {
 			return err
 		}
-
 
 		users = append(users, user)
 	}

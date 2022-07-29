@@ -22,6 +22,7 @@ type ConsumersHub struct {
 	unregister chan *Consumer
 }
 
+// NewConsumersHub create new hub.
 func NewConsumersHub() *ConsumersHub {
 	return &ConsumersHub{
 		consumers: make(map[*Consumer]bool),
@@ -30,6 +31,7 @@ func NewConsumersHub() *ConsumersHub {
 	}
 }
 
+// run listen to register/unregister signals and mutate consumers map.
 func (h *ConsumersHub) run() {
 	for {
 		select {
@@ -43,60 +45,66 @@ func (h *ConsumersHub) run() {
 	}
 }
 
+// Consumer represent User consumers.
 type Consumer struct {
+	// Channel name to listen.
 	Channel string
+
+	// Current user.
 	User *User
+
+	// WebSocket connection.
 	ws *websocket.Conn
+
+	// Channel stream.
 	stream nats.JetStreamContext
+
+	// Presence store.
+	presence nats.KeyValue
+
+	// ConsumersHub for self management.
 	hub *ConsumersHub
+
+	// Binded Logger for tracking internal process.
 	Logger echo.Logger
 }
 
+// Register consumer in hub, managing join presence.
 func (c Consumer) Register() {
 	c.hub.register <- &c
 
 	if c.Join() {
-		kv, err := c.stream.CreateKeyValue(&nats.KeyValueConfig{
-			Bucket: c.Channel + "-presence",
-		})
-		if err != nil {
-			// do somethig
-		}
-
 		data, err := json.Marshal(c.User)
 		if err != nil {
 			c.Logger.Errorf("Consumer JSON Marshall error: %v", err)
 		}
 
-		kv.Create(c.User.Id, data)
+		// Put user in presence store
+		c.presence.Create(c.User.Id, data)
 	}
 }
 
+// Unregister consumer from hub, managing leave presence.
 func (c Consumer) Unregister() {
 	c.hub.unregister <- &c
 
 	if c.Leave() {
-		kv, err := c.stream.CreateKeyValue(&nats.KeyValueConfig{
-			Bucket: c.Channel + "-presence",
-		})
-		if err != nil {
-			// do somethig
-		}
-
-		kv.Purge(c.User.Id)
+		// Remove user from presence store
+		c.presence.Purge(c.User.Id)
 	}
 }
 
-// TODO: maybe better to name Listen ?
+// Listen create new listener for incomming and ongoing channel messages for User consumer.
 func (c Consumer) Listen() {
 	defer c.Unregister()
 
 	var subscription *nats.Subscription
 
 	// Without nats.DeliverNew() the subscriber will get all messages in the stream
-	// It allows us for free fill chat history in UI, but I found that it hard to manage it
+	// It allows us for free fill the chat history in UI, but I found that it hard to manage it
 	// if it'll passible to pass last message time to WS reconnect state,
-	// then we'll send to clinet only missed messages.
+	// then we'll send to client only missed messages.
+	//
 	// Consumer description here used for track users subscription. See Unregister for details.
 	subscription, err := c.stream.Subscribe(ChannelSubject(c.Channel),  func(msg *nats.Msg) {
 		c.ws.WriteMessage(websocket.TextMessage, msg.Data)
@@ -155,6 +163,7 @@ func (c Consumer) Leave() bool {
 	return true
 }
 
+// Publish channel message to the channel
 func (c Consumer) PublishMsg(subject string, msg ChannelMessage) {
 	data, err := json.Marshal(msg)
 	if err != nil {

@@ -10,20 +10,29 @@ import (
 	"github.com/labstack/echo/v4/middleware"
 )
 
-const AUTH_EXPIRES_IN_HOURS = 72
+const AuthExpiresInHours = 72
 
+// Auth represents current JWT auth.
 type Auth struct {
+	// Current User.
 	User *User `json:"user"`
+
+	// Current channel.
 	Channel string `json:"channel"`
+
+	// Rest JWT headers.
 	jwt.StandardClaims
 }
 
+// authHandler resposible for all auth stuff.
 type authHandler struct {
+	// SigningKey for JWT signing process.
 	SigningKey []byte
 	// Require midddleware parse and validate jwt token.
 	Require echo.MiddlewareFunc
 }
 
+// NewAuthHandler prepare authHandler
 func NewAuthHandler(jwtSecret string) *authHandler {
 	SigningKey := []byte(jwtSecret)
 
@@ -47,7 +56,7 @@ func NewAuthHandler(jwtSecret string) *authHandler {
 	}
 }
 
-// Create /auth returns token for specific user.
+// Create /auth generate token for specific user.
 func (a authHandler) Create(c echo.Context) error {
 	name := c.FormValue("name")
 	email := c.FormValue("email")
@@ -76,7 +85,7 @@ func (a authHandler) Create(c echo.Context) error {
 		channel,
 		jwt.StandardClaims{
 				Issuer: "chitchat",
-				ExpiresAt: time.Now().Add(time.Hour * AUTH_EXPIRES_IN_HOURS).Unix(),
+				ExpiresAt: time.Now().Add(time.Hour * AuthExpiresInHours).Unix(),
 		},
 	}
 
@@ -95,8 +104,14 @@ func (a authHandler) Create(c echo.Context) error {
 
 // Get /auth will return valid auth object.
 func (a authHandler) Get(c echo.Context) error {
-	token := c.Get("token").(*jwt.Token)
-	auth := token.Claims.(*Auth)
+	auth := ExtactAuth(c)
 
 	return c.JSON(http.StatusOK, auth)
+}
+
+// ExtactAuth from echo context.
+func ExtactAuth(c echo.Context) *Auth {
+	token := c.Get("token").(*jwt.Token)
+
+	return token.Claims.(*Auth)
 }
