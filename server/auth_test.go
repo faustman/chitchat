@@ -218,7 +218,7 @@ func TestGetAuth(t *testing.T) {
 		tokenResponse := &tokenResponse{}
 		json.Unmarshal(rec.Body.Bytes(), tokenResponse)
 
-		reqGet := httptest.NewRequest(http.MethodGet, "/auth?token=" + tokenResponse.Token, nil)
+		reqGet := httptest.NewRequest(http.MethodGet, "/auth?token="+tokenResponse.Token, nil)
 		resGet := httptest.NewRecorder()
 
 		e.ServeHTTP(resGet, reqGet)
@@ -248,7 +248,7 @@ func TestGetAuthWithoutToken(t *testing.T) {
 	e.ServeHTTP(resGet, reqGet)
 
 	assert.Equal(t, http.StatusUnauthorized, resGet.Code)
-	assert.Equal(t, `{"message":"Unauthorized"}` + "\n", resGet.Body.String())
+	assert.Equal(t, `{"message":"Unauthorized"}`+"\n", resGet.Body.String())
 }
 
 func TestGetAuthInvalidToken(t *testing.T) {
@@ -264,5 +264,5 @@ func TestGetAuthInvalidToken(t *testing.T) {
 	e.ServeHTTP(resGet, reqGet)
 
 	assert.Equal(t, http.StatusUnauthorized, resGet.Code)
-	assert.Equal(t, `{"message":"Unauthorized"}` + "\n", resGet.Body.String())
+	assert.Equal(t, `{"message":"Unauthorized"}`+"\n", resGet.Body.String())
 }

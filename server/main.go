@@ -25,9 +25,9 @@ func main() {
 
 	authHandler := NewAuthHandler(os.Getenv("JWT_SECRET"))
 
-    // Create new JWT Token
+	// Create new JWT Token
 	e.POST("/auth", authHandler.Create)
-    // Get auth and validate JWT Token
+	// Get auth and validate JWT Token
 	e.GET("/auth", authHandler.Get, authHandler.Require)
 
 	e.Logger.Info("Connecting to NATS..")

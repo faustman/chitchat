@@ -36,7 +36,7 @@ func NewStream() (nats.JetStreamContext, error) {
 	js.AddStream(&nats.StreamConfig{
 		Name:     StreamName,
 		Subjects: []string{StreamName + ".*.*"},
-		NoAck: true,
+		NoAck:    true,
 	})
 
 	return js, nil

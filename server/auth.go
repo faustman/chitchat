@@ -37,22 +37,22 @@ func NewAuthHandler(jwtSecret string) *authHandler {
 	SigningKey := []byte(jwtSecret)
 
 	config := middleware.JWTConfig{
-		Claims: &Auth{},
-		SigningKey: SigningKey,
-		ContextKey: "token",
+		Claims:      &Auth{},
+		SigningKey:  SigningKey,
+		ContextKey:  "token",
 		TokenLookup: "query:token", // getting token for url, eg. /auth?token=abc
 		ErrorHandler: func(err error) error {
 			// Masking all jwt errors from the clients
 			return &echo.HTTPError{
-				Code:     http.StatusUnauthorized,
-				Message:  "Unauthorized",
+				Code:    http.StatusUnauthorized,
+				Message: "Unauthorized",
 			}
 		},
 	}
 
 	return &authHandler{
 		SigningKey: SigningKey,
-		Require: middleware.JWTWithConfig(config),
+		Require:    middleware.JWTWithConfig(config),
 	}
 }
 
@@ -84,8 +84,8 @@ func (a authHandler) Create(c echo.Context) error {
 		NewUser(name, email),
 		channel,
 		jwt.StandardClaims{
-				Issuer: "chitchat",
-				ExpiresAt: time.Now().Add(time.Hour * AuthExpiresInHours).Unix(),
+			Issuer:    "chitchat",
+			ExpiresAt: time.Now().Add(time.Hour * AuthExpiresInHours).Unix(),
 		},
 	}
 

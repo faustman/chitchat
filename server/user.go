@@ -6,9 +6,9 @@ import (
 )
 
 type User struct {
-	Id string `json:"id"`
-	Name string `json:"name"`
-	Email string `json:"-"`
+	Id     string `json:"id"`
+	Name   string `json:"name"`
+	Email  string `json:"-"`
 	Avatar string `json:"avatar,omitempty"`
 }
 
@@ -19,8 +19,8 @@ func NewUser(name, email string) *User {
 	id := md5.Sum([]byte(name + email))
 
 	user := User{
-		Id:  fmt.Sprintf("%x", id),
-		Name: name,
+		Id:    fmt.Sprintf("%x", id),
+		Name:  name,
 		Email: email,
 	}
 

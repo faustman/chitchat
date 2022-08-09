@@ -41,8 +41,8 @@ type ConsumersHub struct {
 // NewConsumersHub create new hub.
 func NewConsumersHub() *ConsumersHub {
 	return &ConsumersHub{
-		consumers: make(map[*Consumer]bool),
-		register: make(chan *Consumer),
+		consumers:  make(map[*Consumer]bool),
+		register:   make(chan *Consumer),
 		unregister: make(chan *Consumer),
 	}
 }
@@ -51,9 +51,9 @@ func NewConsumersHub() *ConsumersHub {
 func (h *ConsumersHub) run() {
 	for {
 		select {
-		case consumer := <- h.register:
+		case consumer := <-h.register:
 			h.consumers[consumer] = true
-		case consumer := <- h.unregister:
+		case consumer := <-h.unregister:
 			if _, ok := h.consumers[consumer]; ok {
 				delete(h.consumers, consumer)
 			}
@@ -97,13 +97,13 @@ type Consumer struct {
 // TODO: let's reduce number of agruments
 func NewConsumer(channel string, user *User, ws *websocket.Conn, hub *ConsumersHub, stream nats.JetStreamContext, presence nats.KeyValue, logger echo.Logger) *Consumer {
 	return &Consumer{
-		Channel: channel,
-		User: user,
-		ws: ws,
-		hub: hub,
-		stream: stream,
+		Channel:  channel,
+		User:     user,
+		ws:       ws,
+		hub:      hub,
+		stream:   stream,
 		presence: presence,
-		Logger: logger,
+		Logger:   logger,
 		shutdown: make(chan bool),
 	}
 }
@@ -145,7 +145,7 @@ func (c Consumer) Listen() {
 	// then we'll send to client only missed messages.
 	//
 	// Consumer description here used for track users subscription. See Unregister for details.
-	subscription, err := c.stream.Subscribe(ChannelSubject(c.Channel),  func(msg *nats.Msg) {
+	subscription, err := c.stream.Subscribe(ChannelSubject(c.Channel), func(msg *nats.Msg) {
 		c.ws.SetWriteDeadline(time.Now().Add(writeWait))
 		c.ws.WriteMessage(websocket.TextMessage, msg.Data)
 	}, nats.DeliverNew(), nats.Description(c.User.Id))
@@ -212,9 +212,9 @@ func (c Consumer) Join() bool {
 	// if there still no more consumers for user
 	// send leave msg to the channel
 	for _, consumer := range consumers {
-    if consumer == c.User.Id {
-        return false
-    }
+		if consumer == c.User.Id {
+			return false
+		}
 	}
 
 	c.PublishMsg(PresenceSubject(c.Channel), NewChannelJoinMessage(c.User, time.Now()))
@@ -229,9 +229,9 @@ func (c Consumer) Leave() bool {
 	// if there still no more consumers for user
 	// send leave msg to the channel
 	for _, consumer := range consumers {
-    if consumer == c.User.Id {
-        return false
-    }
+		if consumer == c.User.Id {
+			return false
+		}
 	}
 
 	c.PublishMsg(PresenceSubject(c.Channel), NewChannelLeaveMessage(c.User, time.Now()))

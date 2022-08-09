@@ -22,37 +22,37 @@ var (
 
 // ChannelMessage unsing for communication in channel.
 type ChannelMessage struct {
-	Type string `json:"type"`
-	FromUser *User `json:"from_user"`
-	SentAt time.Time `json:"sent_at"`
-	Text string `json:"text,omitempty"`
+	Type     string    `json:"type"`
+	FromUser *User     `json:"from_user"`
+	SentAt   time.Time `json:"sent_at"`
+	Text     string    `json:"text,omitempty"`
 }
 
 // NewChannelMessage build new text ChannelMessage.
 func NewChannelMessage(user *User, sentAt time.Time, text string) ChannelMessage {
 	return ChannelMessage{
-		Type: "message",
+		Type:     "message",
 		FromUser: user,
-		SentAt: sentAt,
-		Text: text,
+		SentAt:   sentAt,
+		Text:     text,
 	}
 }
 
 // NewChannelMessage build new join ChannelMessage.
 func NewChannelJoinMessage(user *User, sentAt time.Time) ChannelMessage {
 	return ChannelMessage{
-		Type: "join",
+		Type:     "join",
 		FromUser: user,
-		SentAt: sentAt,
+		SentAt:   sentAt,
 	}
 }
 
 // NewChannelMessage build new leave ChannelMessage.
 func NewChannelLeaveMessage(user *User, sentAt time.Time) ChannelMessage {
 	return ChannelMessage{
-		Type: "leave",
+		Type:     "leave",
 		FromUser: user,
-		SentAt: sentAt,
+		SentAt:   sentAt,
 	}
 }
 
@@ -69,7 +69,7 @@ type channelHandler struct {
 func NewChannelHandler(stream nats.JetStreamContext, hub *ConsumersHub) *channelHandler {
 	return &channelHandler{
 		stream: stream,
-		hub: hub,
+		hub:    hub,
 	}
 }
 
@@ -164,7 +164,7 @@ func (h channelHandler) GetUsers(c echo.Context) error {
 
 	var users []User
 
-	uids, _ := presence.Keys();
+	uids, _ := presence.Keys()
 
 	for _, uid := range uids {
 		entry, err := presence.Get(uid)
